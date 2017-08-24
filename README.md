@@ -13,5 +13,3 @@ composer require imemento/http
 ```php
 use iMemento\Http\Service;
 ```
-
-etc.

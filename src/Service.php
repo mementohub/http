@@ -11,41 +11,28 @@ use GuzzleHttp\Client;
  */
 class Service {
 
+
     /**
-     * @var string
+     * @var array
      */
-    private $endpoint = 'http://endpoint.kong';
-    /**
-     * @var string
-     */
-    private $host = 'example.com';
-    /**
-     * @var string
-     */
-    private $private_key = 'key/location';
-    /**
-     * @var string
-     */
-    private $issuer = 'this-app';
+    private $config = [];
+
 
     /**
      * Service constructor.
      *
-     * @param $endpoint
-     * @param $host
-     * @param $private_key
-     * @param $issuer
+     * @param $config
      */
-    public function __construct($endpoint, $host, $private_key, $issuer) {
-        $this->endpoint = $endpoint;
-        $this->host = $host;
-        $this->private_key = $private_key;
-        $this->issuer = $issuer;
+    public function __construct(array $config = []) {
+
+        //TODO: guzzle has base_uri
+
+        $this->config = array_merge($this->config, $config);
 
         $this->caller = new Client([
             'headers' => [
                 'Accept' 	=> 'application/json',
-                'Host'     	=> $this->host,
+                'Host'     	=> $this->config['host'],
             ],
         ]);
     }
@@ -53,7 +40,9 @@ class Service {
 
     protected function getPermissions()
     {
-        
+
+
+
     }
 
 
@@ -62,7 +51,7 @@ class Service {
      */
     protected function getToken() {
 
-        return 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.EkN-DOsnsuRjRO6BxXemmJDm3HbxrbRzXglbN2S4sOkopdU4IsDxTI8jO19W_A4K8ZPJijNLis4EZsHeY559a4DFOd50_OqgHGuERTqYZyuhtF39yxJPAjUESwxk2J5k_4zM3O-vtd1Ghyo4IbqKKSy6J9mTniYJPenn5-HIirE';
+        return 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhdXRoIiwic3ViIjoiMTIzNDU2Nzg5MCIsIm5hbWUiOiJKb2huIERvZSIsImFkbWluIjp0cnVlfQ.DN5nRerbLPuKDf_--HgKqQ_OKWZWztn6n0zWkUsaCsZf3JxyHyzkpL_wWKOL2UMUQl0sh2TCMX0zJ1LE24fz5uVkEZXGIzaQv7513p30EbW7CTXrWkB6rE01IqrMUgDwKa27hdELlRE727fEq3nFlbPPIMJcEebUBZUR2IivGvw';
 
     }
 
@@ -72,10 +61,14 @@ class Service {
      * @param        $data
      * @return mixed|\Psr\Http\Message\ResponseInterface
      */
-    private function call(string $method, string $url, $data) {
-        $data['headers']['Authorization'] = 'Bearer ' . $this->getToken();
+    protected function call(string $method, string $url, $data = null) {
+        $url = $this->config['endpoint'] . $url;
 
-        return $this->caller->request($method, $url, $data);
+        $data['headers']['Authorization'] = 'X-Memento-Key ' . $this->getToken();
+
+        $response = $this->caller->request($method, $url, $data);
+
+        return json_decode($response->getBody(), true);
     }
 
 
@@ -90,11 +83,10 @@ class Service {
 
     /**
      * @param $url
-     * @param $data
      * @return mixed|\Psr\Http\Message\ResponseInterface
      */
-    public function get($url, $data) {
-        return $this->call('GET', $url, $data);
+    public function get($url) {
+        return $this->call('GET', $url);
     }
 
     /**
@@ -108,11 +100,10 @@ class Service {
 
     /**
      * @param $url
-     * @param $data
      * @return mixed|\Psr\Http\Message\ResponseInterface
      */
-    public function delete($url, $data) {
-        return $this->call('DELETE', $url, $data);
+    public function delete($url) {
+        return $this->call('DELETE', $url);
     }
 
 }
