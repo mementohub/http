@@ -17,14 +17,13 @@ class Permissions
         $this->config = array_merge($this->config, $config);
     }*/
 
-    public function authorize(Issuer $issuer, string $auth_token)
+    public function authorize(Issuer $issuer, string $auth_token = null)
     {
         //TODO: remove the sub, get the user_id from auth_token in api-permissions
 
         $payload = Payload::createPayload([
-            'sub' => 51,
             'iss' => $issuer->name,
-            'auth' => $auth_token,
+            'auth_token' => $auth_token,
         ]);
 
         $token = JWT::encode($payload, $issuer->private_key);
@@ -37,11 +36,7 @@ class Permissions
             ],
         ]);
 
-        $data = [
-            'token' => $token,
-        ];
-
-        $response = $client->request('POST', 'http://api-permissions.dev/api/v1/authorize', $data);
+        $response = $client->request('POST', 'http://api-permissions.dev/api/v1/authorize');
 
         //TODO: could get rid of decode / encode
         $permissions = json_decode($response->getBody(), true);

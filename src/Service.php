@@ -12,13 +12,13 @@ use iMemento\JWT\Payload;
  *
  * @package iMemento\Http
  */
-class Service
+abstract class Service
 {
 
     /**
      * @var array
      */
-    protected $config = [];
+    protected $config;
 
     /**
      * @var
@@ -28,31 +28,40 @@ class Service
     /**
      * @var
      */
+    protected $caller;
+
+    /**
+     * @var
+     */
     protected $permissions;
 
     /**
      * @var
      */
-    protected $auth_token;
+    protected $user_token;
+
+
+    /**
+     * @var
+     */
+    protected $token;
 
 
     /**
      * Service constructor.
      *
+     * @param Issuer $issuer
      * @param $config
      */
-    public function __construct(array $config = [])
+    public function __construct(Issuer $issuer = null, array $config = [])
     {
         //TODO: guzzle has base_uri
 
         $this->config = array_merge($this->config, $config);
 
-        $this->issuer = new Issuer($this->config['issuer'], $this->config['private_key']);
+        $this->issuer = $issuer;
 
         $this->permissions = new Permissions;
-
-        //TODO: get this from session
-        $this->auth_token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhdXRoIiwic3ViIjoiMTIzNDU2Nzg5MCIsIm5hbWUiOiJKb2huIERvZSIsImFkbWluIjp0cnVlfQ.DN5nRerbLPuKDf_--HgKqQ_OKWZWztn6n0zWkUsaCsZf3JxyHyzkpL_wWKOL2UMUQl0sh2TCMX0zJ1LE24fz5uVkEZXGIzaQv7513p30EbW7CTXrWkB6rE01IqrMUgDwKa27hdELlRE727fEq3nFlbPPIMJcEebUBZUR2IivGvw';
 
         $this->caller = new Client([
             'headers' => [
@@ -62,31 +71,44 @@ class Service
         ]);
     }
 
+    /**
+     * @param $token
+     * @return $this
+     */
+    public function setUserToken($token)
+    {
+        $this->user_token = $token;
+
+        return $this;
+    }
 
     /**
      * @return mixed
      */
     protected function getPermissions()
     {
-        return $this->permissions->authorize($this->issuer, $this->auth_token);
+        return $this->permissions->authorize($this->issuer, $this->user_token);
     }
-
 
     /**
      * @return string
      */
     protected function getToken()
     {
+        if(!is_null($this->token)) {
+            return $this->token;
+        }
+
         $permissions = $this->getPermissions();
 
         $payload = Payload::createPayload([
-            'iss' => $this->config['issuer'],
+            'iss' => $this->issuer->name,
             'perms' => $permissions,
         ]);
 
-        $token = JWT::encode($payload, $this->config['private_key']);
+        $this->token = JWT::encode($payload, $this->issuer->private_key);
 
-        return $token;
+        return $this->token;
     }
 
     /**
@@ -95,7 +117,7 @@ class Service
      * @param        $data
      * @return mixed|\Psr\Http\Message\ResponseInterface
      */
-    protected function call(string $method, string $url, $data = null)
+    private function call(string $method, string $url, $data = null)
     {
         $url = $this->config['endpoint'] . $url;
 
@@ -112,7 +134,7 @@ class Service
      * @param $data
      * @return mixed|\Psr\Http\Message\ResponseInterface
      */
-    public function post($url, $data)
+    protected function _post($url, $data = null)
     {
         return $this->call('POST', $url, $data);
     }
@@ -121,7 +143,7 @@ class Service
      * @param $url
      * @return mixed|\Psr\Http\Message\ResponseInterface
      */
-    public function get($url)
+    protected function _get($url)
     {
         return $this->call('GET', $url);
     }
@@ -131,7 +153,7 @@ class Service
      * @param $data
      * @return mixed|\Psr\Http\Message\ResponseInterface
      */
-    public function put($url, $data)
+    protected function _put($url, $data = null)
     {
         return $this->call('PUT', $url, $data);
     }
@@ -140,7 +162,7 @@ class Service
      * @param $url
      * @return mixed|\Psr\Http\Message\ResponseInterface
      */
-    public function delete($url)
+    protected function _delete($url)
     {
         return $this->call('DELETE', $url);
     }
