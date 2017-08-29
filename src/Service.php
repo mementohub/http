@@ -139,11 +139,12 @@ abstract class Service
 
     /**
      * @param $url
+     * @param $data
      * @return mixed|\Psr\Http\Message\ResponseInterface
      */
-    protected function _get($url)
+    protected function _get($url, $data = null)
     {
-        return $this->call('GET', $url);
+        return $this->call('GET', $url, $data);
     }
 
     /**
@@ -158,11 +159,12 @@ abstract class Service
 
     /**
      * @param $url
+     * @param $data
      * @return mixed|\Psr\Http\Message\ResponseInterface
      */
-    protected function _delete($url)
+    protected function _delete($url, $data = null)
     {
-        return $this->call('DELETE', $url);
+        return $this->call('DELETE', $url, $data);
     }
 
 }

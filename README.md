@@ -25,6 +25,7 @@ class DestinationsService extends Service
 }
 
 $destinations = new DestinationsService(Issuer $issuer, array $config);
+$destinations->getTopDestinations(); //returns an array of top destinations
 
 //TODO: config values
 ```
