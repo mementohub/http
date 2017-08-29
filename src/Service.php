@@ -55,8 +55,6 @@ abstract class Service
      */
     public function __construct(Issuer $issuer = null, array $config = [])
     {
-        //TODO: guzzle has base_uri
-
         $this->config = array_merge($this->config, $config);
 
         $this->issuer = $issuer;
