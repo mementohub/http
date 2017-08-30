@@ -19,11 +19,9 @@ class Permissions
 
     public function authorize(Issuer $issuer, string $user_token = null)
     {
-        //TODO: remove the sub, get the user_id from auth_token in api-permissions
-
         $payload = Payload::createPayload([
             'iss' => $issuer->name,
-            'auth_token' => $user_token,
+            'user_token' => $user_token,
         ]);
 
         $token = JWT::encode($payload, $issuer->private_key);
