@@ -46,6 +46,7 @@ abstract class Service
      */
     protected $token;
 
+    //TODO: method for token refresh? auth & perms?
 
     /**
      * Service constructor.
@@ -59,12 +60,11 @@ abstract class Service
 
         $this->issuer = $issuer;
 
-        $this->permissions = new Permissions;
+        $this->permissions = new Permissions($issuer);
 
         $this->caller = new Client([
             'headers' => [
                 'Accept' 	=> 'application/json',
-                'Host'     	=> $this->config['host'],
             ],
         ]);
     }
@@ -85,7 +85,7 @@ abstract class Service
      */
     protected function getPermissions()
     {
-        return $this->permissions->authorize($this->issuer, $this->user_token);
+        return $this->permissions->authorize($this->user_token);
     }
 
     /**
@@ -117,10 +117,10 @@ abstract class Service
      */
     private function call(string $method, string $url, $data = null)
     {
+        $data['headers']['Authorization'] = 'Bearer ' . $this->getToken();
+        $data['headers']['Host'] = $this->config['host'];
+
         $url = $this->config['endpoint'] . $url;
-
-        $data['headers']['Authorization'] = 'X-Memento-Key ' . $this->getToken();
-
         $response = $this->caller->request($method, $url, $data);
 
         return json_decode($response->getBody(), true);
