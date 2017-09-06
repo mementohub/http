@@ -42,12 +42,14 @@ class Permissions
 
     /**
      * @param string|null $user_token
+     * @param string      $service_id
      * @return mixed
      */
-    public function authorize(string $user_token = null)
+    public function authorize(string $user_token = null, string $service_id)
     {
         $payload = Payload::createPayload([
             'iss' => $this->issuer->name,
+            'srv' => $service_id,
             'user_token' => $user_token,
         ]);
 

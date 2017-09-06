@@ -28,6 +28,11 @@ abstract class Service
     /**
      * @var
      */
+    protected $service_id;
+
+    /**
+     * @var
+     */
     protected $caller;
 
     /**
@@ -39,7 +44,6 @@ abstract class Service
      * @var
      */
     protected $user_token;
-
 
     /**
      * @var
@@ -59,9 +63,9 @@ abstract class Service
         $this->config = array_merge($this->config, $config);
 
         $this->issuer = $issuer;
+        $this->service_id = $config['service_id'];
 
-        $this->permissions = new Permissions($issuer);
-
+        $this->permissions = new Permissions($issuer, $this->service_id);
         $this->caller = new Client([
             'headers' => [
                 'Accept' 	=> 'application/json',
