@@ -63,9 +63,9 @@ abstract class Service
         $this->config = array_merge($this->config, $config);
 
         $this->issuer = $issuer;
-        $this->service_id = $config['service_id'];
+        $this->service_id = $this->config['service_id'];
 
-        $this->permissions = new Permissions($issuer, $this->service_id);
+        $this->permissions = new Permissions($issuer);
         $this->caller = new Client([
             'headers' => [
                 'Accept' 	=> 'application/json',
@@ -89,7 +89,7 @@ abstract class Service
      */
     protected function getPermissions()
     {
-        return $this->permissions->authorize($this->user_token);
+        return $this->permissions->authorize($this->user_token, $this->service_id);
     }
 
     /**
