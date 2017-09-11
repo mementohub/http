@@ -10,22 +10,26 @@ composer require imemento/http
 
 ## Usage
 
-Service.php is an abstract class extended by all the other SDKs and exposes useful REST methods. It manages API and user permissions behind the scenes.
+Service.php is an abstract class extended by all the other SDKs and exposes useful REST methods. It manages service and user permissions behind the scenes.
 
 ```php
 use iMemento\Http\Service;
 
-class DestinationsService extends Service 
+// Example:
+class DestinationsService extends Service
 {
-	// Example:
-	public function getDestinations($url)
+	public function getDestinations()
 	{
-		return $this->_get($url);
+		return $this->_get('/destinations');
 	}
 }
 
-$destinations = new DestinationsService(Issuer $issuer, array $config);
-$destinations->getTopDestinations(); //returns an array of top destinations
+$config = [
+	'service_id' => 'destinations',
+	'endpoint' => 'http://api-destinations.dev/api/v1/',
+	'host' => 'api-destinations.dev',
+];
 
-//TODO: config values
+$destinations = new DestinationsService(Issuer $issuer, array $config);
+$destinations->getDestinations(); //returns an array of top destinations
 ```
