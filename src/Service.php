@@ -59,12 +59,11 @@ abstract class Service
 
         $this->issuer = $issuer;
 
-        $this->permissions = new Permissions;
+        $this->permissions = new Permissions($issuer);
 
         $this->caller = new Client([
             'headers' => [
                 'Accept' 	=> 'application/json',
-                'Host'     	=> $this->config['host'],
             ],
         ]);
     }
@@ -85,7 +84,7 @@ abstract class Service
      */
     protected function getPermissions()
     {
-        return $this->permissions->authorize($this->issuer, $this->user_token);
+        return $this->permissions->authorize($this->user_token, $this->issuer->name);
     }
 
     /**
@@ -120,6 +119,7 @@ abstract class Service
         $url = $this->config['endpoint'] . $url;
 
         $data['headers']['Authorization'] = 'Bearer ' . $this->getToken();
+        $data['headers']['Host'] = $this->config['host'];
 
         $response = $this->caller->request($method, $url, $data);
 

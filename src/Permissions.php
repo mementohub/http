@@ -24,10 +24,10 @@ class Permissions
      * @var array
      */
     protected $config = [
-        //'endpoint' => 'http://api-permissions.dev/api/v1/authorize',
-        //'host' => 'api-permissions.dev',
-        'endpoint' => 'http://api.imemento.com:8000/api/v1/authorize',
-        'host' => 'api.perms.imemento.com',
+        'endpoint' => 'http://api-permissions.dev/api/v1/authorize',
+        'host' => 'api-permissions.dev',
+        //'endpoint' => 'http://api.imemento.com:8000/api/v1/authorize',
+        //'host' => 'api.perms.imemento.com',
     ];
 
     /**
