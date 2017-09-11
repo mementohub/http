@@ -28,11 +28,6 @@ abstract class Service
     /**
      * @var
      */
-    protected $service_id;
-
-    /**
-     * @var
-     */
     protected $caller;
 
     /**
@@ -45,12 +40,12 @@ abstract class Service
      */
     protected $user_token;
 
+
     /**
      * @var
      */
     protected $token;
 
-    //TODO: method for token refresh? auth & perms?
 
     /**
      * Service constructor.
@@ -63,12 +58,13 @@ abstract class Service
         $this->config = array_merge($this->config, $config);
 
         $this->issuer = $issuer;
-        $this->service_id = $this->config['service_id'];
 
-        $this->permissions = new Permissions($issuer);
+        $this->permissions = new Permissions;
+
         $this->caller = new Client([
             'headers' => [
                 'Accept' 	=> 'application/json',
+                'Host'     	=> $this->config['host'],
             ],
         ]);
     }
@@ -89,7 +85,7 @@ abstract class Service
      */
     protected function getPermissions()
     {
-        return $this->permissions->authorize($this->user_token, $this->service_id);
+        return $this->permissions->authorize($this->issuer, $this->user_token);
     }
 
     /**
@@ -103,7 +99,7 @@ abstract class Service
 
         $permissions = $this->getPermissions();
 
-        $payload = Payload::createPayload([
+        $payload = Payload::create([
             'iss' => $this->issuer->name,
             'perms' => $permissions,
         ]);
@@ -121,10 +117,10 @@ abstract class Service
      */
     private function call(string $method, string $url, $data = null)
     {
-        $data['headers']['Authorization'] = 'Bearer ' . $this->getToken();
-        $data['headers']['Host'] = $this->config['host'];
-
         $url = $this->config['endpoint'] . $url;
+
+        $data['headers']['Authorization'] = 'Bearer ' . $this->getToken();
+
         $response = $this->caller->request($method, $url, $data);
 
         return json_decode($response->getBody(), true);

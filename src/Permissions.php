@@ -24,6 +24,8 @@ class Permissions
      * @var array
      */
     protected $config = [
+        //'endpoint' => 'http://api-permissions.dev/api/v1/authorize',
+        //'host' => 'api-permissions.dev',
         'endpoint' => 'http://api.imemento.com:8000/api/v1/authorize',
         'host' => 'api.perms.imemento.com',
     ];
@@ -47,10 +49,10 @@ class Permissions
      */
     public function authorize(string $user_token = null, string $service_id)
     {
-        $payload = Payload::createPayload([
+        $payload = Payload::create([
             'iss' => $this->issuer->name,
             'srv' => $service_id,
-            'user_token' => $user_token,
+            'user' => $user_token,
         ]);
 
         $token = JWT::encode($payload, $this->issuer->private_key);
