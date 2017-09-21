@@ -1,7 +1,7 @@
 {
     "name": "imemento/http",
-    "description": "iMemento HTTP",
-    "homepage": "https://gitlab.com/imemento/composer/http",
+    "description": "iMemento HTTP Helpers",
+    "homepage": "https://gitlab.com/imemento/composer/packages/http",
     "license": "MIT",
     "authors": [
         {
@@ -11,8 +11,11 @@
         }
     ],
     "require": {
-        "php" : "^5.6|^7.0",
-        "guzzlehttp/guzzle": "^6.0"
+        "php": "^7.1",
+        "guzzlehttp/guzzle": "^6.0",
+        "imemento/exceptions": "dev-master",
+        "imemento/jwt": "dev-master",
+        "imemento/sdk-permissions": "dev-master"
     },
     "require-dev": {
         "phpunit/phpunit" : "^5.7.5"
