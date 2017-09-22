@@ -78,11 +78,9 @@ abstract class Service
     public function __construct(Issuer $issuer = null, array $config = [])
     {
         $this->config = array_merge($this->config, $config);
-
         $this->issuer = $issuer;
 
         $this->authentication = new AuthClient($issuer);
-
         $this->permissions = new PermsClient($issuer);
 
         $this->caller = new Client([
@@ -106,17 +104,22 @@ abstract class Service
     /**
      * Returns the permissions token
      *
+     * @param bool $existing If true, returns the existing perms_token, otherwise tries to get a new one
      * @return mixed
-     * @throws InvalidTokenException
      */
-    protected function getPermissions()
+    protected function getPermissions($existing = true)
     {
-        $response = $this->permissions->authorize($this->user_token, $this->issuer->name);
+        if (!is_null($this->perms_token) && $existing == true) {
+            return $this->perms_token;
+        }
+
+        $response = $this->permissions->authorize($this->user_token, $this->config['service_id']);
         $body = json_decode($response->getBody());
 
         //if the auth token is expired, refresh it and try perms again
         if ($response->getStatusCode() == 401 && $body->code == 1002) {
             $this->refreshAuthToken();
+            $this->getPermissions(false); //tries getting permissions with the new auth token
         }
 
         $this->perms_token = $body;
@@ -131,7 +134,7 @@ abstract class Service
      */
     protected function getToken()
     {
-        if(!is_null($this->token)) {
+        if (!is_null($this->token)) {
             return $this->token;
         }
 
@@ -155,7 +158,7 @@ abstract class Service
         $this->user_token = $this->authentication->refreshToken($this->user_token);
 
         //if in the range of allowed attempts, retry - otherwise throw error
-        if($this->auth_attempts < 1) {
+        if ($this->auth_attempts < 1) {
             $this->auth_attempts++;
         } else {
             throw new InvalidTokenException('The Auth token could not be refreshed.');
@@ -170,16 +173,12 @@ abstract class Service
         $this->perms_token = $this->permissions->refreshToken($this->user_token);
 
         //if in the range of allowed attempts, retry - otherwise throw error
-        if($this->perms_attempts < 1) {
+        if ($this->perms_attempts < 1) {
             $this->perms_attempts++;
         } else {
             throw new InvalidTokenException('The Perms token could not be refreshed.');
         }
     }
-
-
-    //TODO: make sure permissions call is not made unless necessary
-    //getpermissions shouldn't be called on refresh i think
 
 
     /**
@@ -189,29 +188,30 @@ abstract class Service
      * @return mixed|\Psr\Http\Message\ResponseInterface
      * @throws InvalidTokenException
      */
-    private function call(string $method, string $url, $data = null)
+    protected function call(string $method, string $url, $data = null)
     {
         $url = $this->config['endpoint'] . $url;
 
+        //guzzle config
         $data['headers']['Authorization'] = 'Bearer ' . $this->getToken();
         $data['headers']['Host'] = $this->config['host'];
 
         $response = $this->caller->request($method, $url, $data);
-        $body = json_decode($response->getBody());
+        $body = json_decode($response->getBody(), true);
 
         //if the auth token is expired, refresh it, get perms and make the call again
-        if ($response->getStatusCode() == 401 && $body->code == 1002) {
+        if ($response->getStatusCode() == 401 && $body['code'] == 1002) {
             $this->refreshAuthToken();
-            $this->getPermissions();
+            $this->getPermissions(false); //tries getting permissions with the new auth token
             $this->call($method, $url, $data);
 
         //if the perms token is expired, refresh it and make the call again
-        } elseif ($response->getStatusCode() == 401 && $body->code == 1003) {
+        } elseif ($response->getStatusCode() == 401 && $body['code'] == 1003) {
             $this->refreshPermsToken();
             $this->call($method, $url, $data);
         }
 
-        return json_decode($response->getBody(), true);
+        return $body; //TODO: should we return the whole response?
     }
 
     /**
