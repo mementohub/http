@@ -19,6 +19,9 @@ abstract class Service
 {
 
     /**
+     * ['service_id'] string Id of the consumed service
+     * ['endpoint']   string The consumed service's url (kong)
+     * ['host']       string The consumed service's host
      * @var array
      */
     protected $config;
