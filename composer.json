@@ -35,5 +35,11 @@
     },
     "config": {
         "sort-packages": true
-    }
+    },
+    "repositories": [
+        {"type": "composer", "url": "https://repo.packagist.com/imemento/"},
+        {"packagist.org": false}
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }

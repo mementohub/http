@@ -125,7 +125,9 @@ abstract class Service
             $this->getPermissions(false); //tries getting permissions with the new auth token
         }
 
-        $this->perms_token = $body;
+        //if the response is ok, update the perms token
+        if($response->getStatusCode() == 200)
+            $this->perms_token = $body;
 
         return $this->perms_token;
     }
@@ -158,7 +160,7 @@ abstract class Service
      */
     protected function refreshAuthToken()
     {
-        $this->user_token = $this->authentication->refreshToken($this->user_token);
+        $this->user_token = $this->authentication->getToken();
 
         //if in the range of allowed attempts, retry - otherwise throw error
         if ($this->auth_attempts < 1) {
