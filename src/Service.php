@@ -155,6 +155,8 @@ abstract class Service
         return $this->token;
     }
 
+    //TODO: figure ou how to save the tokens in session
+
     /**
      * @throws InvalidTokenException
      */
