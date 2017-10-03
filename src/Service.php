@@ -112,6 +112,7 @@ abstract class Service
      */
     protected function getPermissions($existing = true)
     {
+        //if not null, we return the existing token
         if (!is_null($this->perms_token) && $existing == true) {
             return $this->perms_token;
         }
@@ -139,12 +140,15 @@ abstract class Service
      */
     protected function getToken()
     {
+        //if token exists, use it
         if (!is_null($this->token)) {
             return $this->token;
         }
 
+        //call perms
         $permissions = $this->getPermissions();
 
+        //create the consumer token
         $payload = Payload::create([
             'iss' => $this->issuer->name,
             'perms' => $permissions,
@@ -226,7 +230,7 @@ abstract class Service
      * @param $data
      * @return mixed|\Psr\Http\Message\ResponseInterface
      */
-    protected function _post($url, $data = null)
+    protected function _post(string $url, array $data = null)
     {
         return $this->call('POST', $url, $data);
     }
@@ -236,7 +240,7 @@ abstract class Service
      * @param $data
      * @return mixed|\Psr\Http\Message\ResponseInterface
      */
-    protected function _get($url, $data = null)
+    protected function _get(string $url, array $data = null)
     {
         return $this->call('GET', $url, $data);
     }
@@ -246,7 +250,7 @@ abstract class Service
      * @param $data
      * @return mixed|\Psr\Http\Message\ResponseInterface
      */
-    protected function _put($url, $data = null)
+    protected function _put(string $url, array $data = null)
     {
         return $this->call('PUT', $url, $data);
     }
@@ -256,9 +260,12 @@ abstract class Service
      * @param $data
      * @return mixed|\Psr\Http\Message\ResponseInterface
      */
-    protected function _delete($url, $data = null)
+    protected function _delete(string $url, array $data = null)
     {
         return $this->call('DELETE', $url, $data);
     }
+
+    //TODO: patch? other http methods?
+    //TODO: figure out each call
 
 }
