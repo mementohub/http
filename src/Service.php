@@ -71,7 +71,6 @@ abstract class Service
      */
     protected $perms_attempts = 0;
 
-
     /**
      * Service constructor.
      *
@@ -113,9 +112,8 @@ abstract class Service
     protected function getPermissions($existing = true)
     {
         //if not null, we return the existing token
-        if (!is_null($this->perms_token) && $existing == true) {
+        if (!is_null($this->perms_token) && $existing == true)
             return $this->perms_token;
-        }
 
         $response = $this->permissions->authorize($this->user_token, $this->config['service_id']);
         $body = json_decode($response->getBody());
@@ -159,12 +157,10 @@ abstract class Service
         return $this->token;
     }
 
-    //TODO: figure ou how to save the tokens in session
-
     /**
      * @throws InvalidTokenException
      */
-    protected function refreshAuthToken()
+    public function refreshAuthToken()
     {
         $this->user_token = $this->authentication->getToken();
 
@@ -179,7 +175,7 @@ abstract class Service
     /**
      * @throws InvalidTokenException
      */
-    protected function refreshPermsToken()
+    public function refreshPermsToken()
     {
         $this->perms_token = $this->permissions->refreshToken($this->user_token);
 
@@ -191,6 +187,31 @@ abstract class Service
         }
     }
 
+    //TODO: actually store the tokens
+
+    /**
+     * @return mixed
+     */
+    public function getAuthToken()
+    {
+        return $this->user_token;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getPermsToken()
+    {
+        return $this->perms_token;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getConsumerToken()
+    {
+        return $this->token;
+    }
 
     /**
      * @param string $method
@@ -264,8 +285,5 @@ abstract class Service
     {
         return $this->call('DELETE', $url, $data);
     }
-
-    //TODO: patch? other http methods?
-    //TODO: figure out each call
 
 }
