@@ -107,22 +107,17 @@ abstract class Service
     /**
      * Returns the permissions token
      *
-     * @param bool $existing If true, returns the existing perms_token, otherwise tries to get a new one
      * @return mixed
      */
-    protected function getPermissions($existing = true)
+    protected function getPermissions()
     {
-        //if not null, we return the existing token
-        if (!is_null($this->perms_token) && $existing == true)
-            return $this->perms_token;
-
         $response = $this->permissions->authorize($this->user_token, $this->config['service_id']);
         $body = json_decode($response->getBody());
 
         //if the auth token is expired, refresh it and try perms again
         if ($response->getStatusCode() == 401 && $body->code == 1002) {
             $this->refreshUserToken();
-            $this->getPermissions(false); //tries getting permissions with the new auth token
+            $this->getPermissions(); //tries getting permissions with the new auth token
         }
 
         //if the response is ok, update the perms token
@@ -165,7 +160,11 @@ abstract class Service
         if ($token)
             return $token;
 
-        //otherwise create a new token
+        //if not perms_token, get it
+        if(!$this->perms_token)
+            $this->getPermissions();
+
+        //create a new token
         $this->createConsumerToken();
 
         //store the token
@@ -285,37 +284,49 @@ abstract class Service
     protected function call(string $method, string $url, $data = null)
     {
         $url = $this->config['endpoint'] . $url;
-        $token = $this->getConsumerToken();
+
+        $this->getConsumerToken();
 
         //guzzle config
-        $data['headers']['Authorization'] = 'Bearer ' . $token;
+        $data['headers']['Authorization'] = 'Bearer ' . $this->consumer_token;
         $data['headers']['Host'] = $this->config['host'];
 
         $response = $this->caller->request($method, $url, $data);
         $body = json_decode($response->getBody(), true);
 
-        //$this->handleTokensRefresh($body['code'], $method, $url, $data);
-
-        //if the auth token is expired, refresh it, get perms and make the call again
-        if ($response->getStatusCode() == 401 && $body['code'] == 1002) {
-            $this->refreshUserToken();
-            $this->getPermissions(false); //tries getting permissions with the new auth token
-            $this->refreshConsumerToken();
-            $this->call($method, $url, $data);
-
-        //if the perms token is expired, refresh it and make the call again
-        } elseif ($response->getStatusCode() == 401 && $body['code'] == 1003) {
-            $this->refreshPermsToken();
-            $this->refreshConsumerToken();
-            $this->call($method, $url, $data);
-
-        //if the consumer token is expired, refresh it and make the call again
-        } elseif ($response->getStatusCode() == 401 && $body['code'] == 1004) {
-            $this->refreshConsumerToken();
-            $this->call($method, $url, $data);
+        //if the service returns 401, we handle the tokens refresh
+        if ($response->getStatusCode() == 401) {
+            $this->handleTokensRefresh($body['code'], $method, $url, $data);
         }
 
         return $body; //TODO: should we return the whole response?
+    }
+
+    /**
+     * @param $code
+     * @param $method
+     * @param $url
+     * @param $data
+     */
+    public function handleTokensRefresh($code, $method, $url, $data)
+    {
+        //if the auth token is expired, refresh it, get perms and make the call again
+        if ($code == 1002) {
+            $this->refreshUserToken();
+            $this->getPermissions(); //tries getting permissions with the new auth token
+            $this->refreshConsumerToken();
+
+            //if the perms token is expired, refresh it and make the call again
+        } elseif ($code == 1003) {
+            $this->refreshPermsToken();
+            $this->refreshConsumerToken();
+
+            //if the consumer token is expired, refresh it and make the call again
+        } elseif ($code == 1004) {
+            $this->refreshConsumerToken();
+        }
+
+        $this->call($method, $url, $data);
     }
 
     /**
