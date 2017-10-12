@@ -3,6 +3,7 @@
 namespace iMemento\Http;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
 use iMemento\Exceptions\InvalidTokenException;
 use iMemento\JWT\Issuer;
 use iMemento\JWT\JWT;
@@ -156,9 +157,9 @@ abstract class Service
             return $this->consumer_token;
 
         //try getting from cache
-        $token = $this->retrieveConsumerToken();
-        if ($token)
-            return $token;
+        $this->consumer_token = $this->retrieveConsumerToken();
+        if ($this->consumer_token)
+            return $this->consumer_token;
 
         //if no perms_token, get it
         if(!$this->perms_token)
@@ -166,6 +167,7 @@ abstract class Service
 
         //create a new token
         $this->createConsumerToken();
+
 
         //store the token
         $this->storeConsumerToken();
@@ -208,7 +210,7 @@ abstract class Service
      */
     public function refreshConsumerToken()
     {
-        $this->consumer_token = $this->permissions->refreshToken($this->user_token);
+        $this->consumer_token = $this->permissions->authorize($this->user_token, $this->config['service_id']);
 
         //if in the range of allowed attempts, retry - otherwise throw error
         if ($this->perms_attempts < 1) {
@@ -246,7 +248,7 @@ abstract class Service
         $key = $this->issuer->name .':'. $this->config['service_id'];
 
         if($this->user_token)
-            $key .= ':'. $this->user_token;
+            $key .= ':'. md5($this->user_token);
 
         return $this->issuer->token_store->get($key);
     }
@@ -264,12 +266,10 @@ abstract class Service
 
         $minutes = !empty($this->config['token_time']) ? $this->config['token_time'] : 48 * 60 * 60;
 
-        $user_token = !is_null($this->user_token) ? md5($this->user_token) : null;
-
         $key = $this->issuer->name .':'. $this->config['service_id'];
 
-        if($user_token)
-            $key .= ':'. $user_token;
+        if($this->user_token)
+            $key .= ':'. md5($this->user_token);
 
         return $this->issuer->token_store->put($key, $this->consumer_token, $minutes);
     }
@@ -277,29 +277,38 @@ abstract class Service
     /**
      * @param string $method
      * @param string $url
-     * @param        $data
+     * @param array  $data
      * @return mixed|\Psr\Http\Message\ResponseInterface
      * @throws InvalidTokenException
      */
-    protected function call(string $method, string $url, $data = null)
+    protected function call(string $method, string $url, array $data = null)
     {
         $url = $this->config['endpoint'] . $url;
 
         $this->getConsumerToken();
 
+        //TODO: test the tokens refresh and what gets stored in cache!!!
+        //TODO: also how the ClientException is handled in the other methods for guzzle
+
         //guzzle config
         $data['headers']['Authorization'] = 'Bearer ' . $this->consumer_token;
         $data['headers']['Host'] = $this->config['host'];
 
-        $response = $this->caller->request($method, $url, $data);
-        $body = json_decode($response->getBody(), true);
+        try {
 
-        //if the service returns 401, we handle the tokens refresh
-        if ($response->getStatusCode() == 401) {
-            $this->handleTokensRefresh($body['code'], $method, $url, $data);
+            $response = $this->caller->request($method, $url, $data);
+            $body = json_decode($response->getBody(), true);
+            return $body;
+
+        } catch (ClientException $e) {
+
+            //if the service returns 401, we handle the tokens refresh
+            if ($e->getResponse()->getStatusCode() == 401) {
+                $code = json_decode($e->getResponse()->getBody())->code;
+                $this->handleTokensRefresh($code, $method, $url, $data);
+            }
+            return;
         }
-
-        return $body; //TODO: should we return the whole response?
     }
 
     /**
