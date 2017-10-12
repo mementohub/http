@@ -121,7 +121,7 @@ abstract class Service
 
         //if the auth token is expired, refresh it and try perms again
         if ($response->getStatusCode() == 401 && $body->code == 1002) {
-            $this->refreshAuthToken();
+            $this->refreshUserToken();
             $this->getPermissions(false); //tries getting permissions with the new auth token
         }
 
@@ -133,11 +133,28 @@ abstract class Service
     }
 
     /**
+     * Creates the consumer token
+     *
+     * @return mixed
+     */
+    public function createConsumerToken()
+    {
+        $payload = Payload::create([
+            'iss' => $this->issuer->name,
+            'perms' => $this->perms_token,
+        ]);
+
+        $this->token = JWT::encode($payload, $this->issuer->private_key);
+
+        return $this->token;
+    }
+
+    /**
      * Returns the consumer token used in the request to the service
      *
      * @return string
      */
-    protected function getToken()
+    /*protected function getToken()
     {
         //if token exists, use it
         if (!is_null($this->token))
@@ -155,15 +172,15 @@ abstract class Service
         $this->token = JWT::encode($payload, $this->issuer->private_key);
 
         //store the token
-        $this->storeConsumerToken($this->token, $this->user_token);
+        //$this->storeConsumerToken($this->token, $this->user_token);
 
         return $this->token;
-    }
+    }*/
 
     /**
      * @throws InvalidTokenException
      */
-    public function refreshAuthToken()
+    public function refreshUserToken()
     {
         $this->user_token = $this->authentication->getToken();
 
@@ -180,7 +197,7 @@ abstract class Service
      */
     public function refreshPermsToken()
     {
-        $this->perms_token = $this->permissions->refreshToken($this->user_token);
+        $this->perms_token = $this->permissions->authorize($this->user_token, $this->config['service_id']);
 
         //if in the range of allowed attempts, retry - otherwise throw error
         if ($this->perms_attempts < 1) {
@@ -191,9 +208,24 @@ abstract class Service
     }
 
     /**
+     * @throws InvalidTokenException
+     */
+    public function refreshConsumerToken()
+    {
+        //$this->token = $this->permissions->refreshToken($this->user_token);
+
+        //if in the range of allowed attempts, retry - otherwise throw error
+        if ($this->perms_attempts < 1) {
+            $this->perms_attempts++;
+        } else {
+            throw new InvalidTokenException('The Consumer token could not be refreshed.');
+        }
+    }
+
+    /**
      * @return mixed
      */
-    public function getAuthToken()
+    public function getUserToken()
     {
         return $this->user_token;
     }
@@ -207,19 +239,25 @@ abstract class Service
     }
 
     /**
+     * @param $user_token
      * @return mixed
      */
-    public function getConsumerToken()
+    /*public function getConsumerToken($user_token)
     {
-        return $this->token;
-    }
+        $key = $this->issuer->name .':'. $this->config['service_id'];
+
+        if($user_token)
+            $key .= ':'. $user_token;
+
+        return $this->issuer->token_store->get($key);
+    }*/
 
     /**
      * @param $token
      * @param $user_token
      * @return mixed
      */
-    public function storeConsumerToken($token, $user_token)
+    /*public function storeConsumerToken($token, $user_token)
     {
         //if the token_store is null, return
         if(is_null($this->issuer->token_store))
@@ -235,7 +273,7 @@ abstract class Service
             $key .= ':'. $user_token;
 
         return $this->issuer->token_store->put($key, $token, $minutes);
-    }
+    }*/
 
     /**
      * @param string $method
@@ -257,13 +295,20 @@ abstract class Service
 
         //if the auth token is expired, refresh it, get perms and make the call again
         if ($response->getStatusCode() == 401 && $body['code'] == 1002) {
-            $this->refreshAuthToken();
+            $this->refreshUserToken();
             $this->getPermissions(false); //tries getting permissions with the new auth token
+            $this->refreshConsumerToken();
             $this->call($method, $url, $data);
 
         //if the perms token is expired, refresh it and make the call again
         } elseif ($response->getStatusCode() == 401 && $body['code'] == 1003) {
             $this->refreshPermsToken();
+            $this->refreshConsumerToken();
+            $this->call($method, $url, $data);
+
+        //if the consumer token is expired, refresh it and make the call again
+        } elseif ($response->getStatusCode() == 401 && $body['code'] == 1004) {
+            $this->refreshConsumerToken();
             $this->call($method, $url, $data);
         }
 
