@@ -60,7 +60,7 @@ abstract class Service
     /**
      * @var
      */
-    protected $token;
+    protected $consumer_token;
 
     /**
      * @var
@@ -144,9 +144,9 @@ abstract class Service
             'perms' => $this->perms_token,
         ]);
 
-        $this->token = JWT::encode($payload, $this->issuer->private_key);
+        $this->consumer_token = JWT::encode($payload, $this->issuer->private_key);
 
-        return $this->token;
+        return $this->consumer_token;
     }
 
     /**
@@ -154,28 +154,25 @@ abstract class Service
      *
      * @return string
      */
-    /*protected function getToken()
+    protected function getConsumerToken()
     {
-        //if token exists, use it
-        if (!is_null($this->token))
-            return $this->token;
+        //if token already loaded, return it
+        if (!is_null($this->consumer_token))
+            return $this->consumer_token;
 
-        //call perms
-        $permissions = $this->getPermissions();
+        //try getting from cache
+        $token = $this->retrieveConsumerToken();
+        if ($token)
+            return $token;
 
-        //create the consumer token
-        $payload = Payload::create([
-            'iss' => $this->issuer->name,
-            'perms' => $permissions,
-        ]);
-
-        $this->token = JWT::encode($payload, $this->issuer->private_key);
+        //otherwise create a new token
+        $this->createConsumerToken();
 
         //store the token
-        //$this->storeConsumerToken($this->token, $this->user_token);
+        $this->storeConsumerToken();
 
-        return $this->token;
-    }*/
+        return $this->consumer_token;
+    }
 
     /**
      * @throws InvalidTokenException
@@ -212,7 +209,7 @@ abstract class Service
      */
     public function refreshConsumerToken()
     {
-        //$this->token = $this->permissions->refreshToken($this->user_token);
+        $this->token = $this->permissions->refreshToken($this->user_token);
 
         //if in the range of allowed attempts, retry - otherwise throw error
         if ($this->perms_attempts < 1) {
@@ -220,6 +217,8 @@ abstract class Service
         } else {
             throw new InvalidTokenException('The Consumer token could not be refreshed.');
         }
+
+        $this->storeConsumerToken();
     }
 
     /**
@@ -239,25 +238,26 @@ abstract class Service
     }
 
     /**
-     * @param $user_token
+     * Retrieves the consumer token from cache
+     *
      * @return mixed
      */
-    /*public function getConsumerToken($user_token)
+    public function retrieveConsumerToken()
     {
         $key = $this->issuer->name .':'. $this->config['service_id'];
 
-        if($user_token)
-            $key .= ':'. $user_token;
+        if($this->user_token)
+            $key .= ':'. $this->user_token;
 
         return $this->issuer->token_store->get($key);
-    }*/
+    }
 
     /**
-     * @param $token
-     * @param $user_token
+     * Stores the consumer token in cache
+     *
      * @return mixed
      */
-    /*public function storeConsumerToken($token, $user_token)
+    protected function storeConsumerToken()
     {
         //if the token_store is null, return
         if(is_null($this->issuer->token_store))
@@ -265,15 +265,15 @@ abstract class Service
 
         $minutes = !empty($this->config['token_time']) ? $this->config['token_time'] : 48 * 60 * 60;
 
-        $user_token = $user_token ? md5($user_token) : null;
+        $user_token = !is_null($this->user_token) ? md5($this->user_token) : null;
 
         $key = $this->issuer->name .':'. $this->config['service_id'];
 
         if($user_token)
             $key .= ':'. $user_token;
 
-        return $this->issuer->token_store->put($key, $token, $minutes);
-    }*/
+        return $this->issuer->token_store->put($key, $this->consumer_token, $minutes);
+    }
 
     /**
      * @param string $method
@@ -285,13 +285,16 @@ abstract class Service
     protected function call(string $method, string $url, $data = null)
     {
         $url = $this->config['endpoint'] . $url;
+        $token = $this->getConsumerToken();
 
         //guzzle config
-        $data['headers']['Authorization'] = 'Bearer ' . $this->getToken();
+        $data['headers']['Authorization'] = 'Bearer ' . $token;
         $data['headers']['Host'] = $this->config['host'];
 
         $response = $this->caller->request($method, $url, $data);
         $body = json_decode($response->getBody(), true);
+
+        //$this->handleTokensRefresh($body['code'], $method, $url, $data);
 
         //if the auth token is expired, refresh it, get perms and make the call again
         if ($response->getStatusCode() == 401 && $body['code'] == 1002) {
