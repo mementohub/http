@@ -22,6 +22,7 @@ abstract class Service
      * ['service_id'] string Id of the consumed service
      * ['endpoint']   string The consumed service's url (kong)
      * ['host']       string The consumed service's host
+     * ['token_time'] int The time in minutes the consumer token is stored
      * @var array
      */
     protected $config;
@@ -139,9 +140,8 @@ abstract class Service
     protected function getToken()
     {
         //if token exists, use it
-        if (!is_null($this->token)) {
+        if (!is_null($this->token))
             return $this->token;
-        }
 
         //call perms
         $permissions = $this->getPermissions();
@@ -153,6 +153,9 @@ abstract class Service
         ]);
 
         $this->token = JWT::encode($payload, $this->issuer->private_key);
+
+        //store the token
+        $this->storeConsumerToken($this->token, $this->user_token);
 
         return $this->token;
     }
@@ -187,8 +190,6 @@ abstract class Service
         }
     }
 
-    //TODO: actually store the tokens
-
     /**
      * @return mixed
      */
@@ -211,6 +212,29 @@ abstract class Service
     public function getConsumerToken()
     {
         return $this->token;
+    }
+
+    /**
+     * @param $token
+     * @param $user_token
+     * @return mixed
+     */
+    public function storeConsumerToken($token, $user_token)
+    {
+        //if the token_store is null, return
+        if(is_null($this->issuer->token_store))
+            return;
+
+        $minutes = !empty($this->config['token_time']) ? $this->config['token_time'] : 48 * 60 * 60;
+
+        $user_token = $user_token ? md5($user_token) : null;
+
+        $key = $this->issuer->name .':'. $this->config['service_id'];
+
+        if($user_token)
+            $key .= ':'. $user_token;
+
+        return $this->issuer->token_store->put($key, $token, $minutes);
     }
 
     /**
