@@ -160,7 +160,7 @@ abstract class Service
         if ($token)
             return $token;
 
-        //if not perms_token, get it
+        //if no perms_token, get it
         if(!$this->perms_token)
             $this->getPermissions();
 
@@ -184,7 +184,7 @@ abstract class Service
         if ($this->auth_attempts < 1) {
             $this->auth_attempts++;
         } else {
-            throw new InvalidTokenException('The Auth token could not be refreshed.');
+            throw new InvalidTokenException('The User token could not be refreshed.');
         }
     }
 
@@ -208,7 +208,7 @@ abstract class Service
      */
     public function refreshConsumerToken()
     {
-        $this->token = $this->permissions->refreshToken($this->user_token);
+        $this->consumer_token = $this->permissions->refreshToken($this->user_token);
 
         //if in the range of allowed attempts, retry - otherwise throw error
         if ($this->perms_attempts < 1) {
