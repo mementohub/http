@@ -5,6 +5,7 @@ namespace iMemento\Http;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use iMemento\Exceptions\InvalidTokenException;
+use iMemento\JWT\Exceptions\InvalidPermissionsException;
 use iMemento\JWT\Issuer;
 use iMemento\JWT\JWT;
 use iMemento\JWT\Payload;
@@ -74,6 +75,11 @@ abstract class Service
     protected $perms_attempts = 0;
 
     /**
+     * @var
+     */
+    protected $consumer_attempts = 0;
+
+    /**
      * Service constructor.
      *
      * @param Issuer $issuer
@@ -112,7 +118,32 @@ abstract class Service
      */
     protected function getPermissions()
     {
+        dd('asd');
+
+        try {
+
+            $response = $this->caller->request($method, $url, $data);
+
+        } catch (ClientException $e) {
+
+            $response = $e->getResponse();
+
+            //if the service returns 401, we handle the tokens refresh
+            if ($e->getResponse()->getStatusCode() == 401) {
+                $code = json_decode($e->getResponse()->getBody())->code;
+                $this->handleTokensRefresh($code, $method, $url, $data);
+            }
+            return;
+        }
+
+
+        $body = json_decode($response->getBody(), true);
+        return $body;
+
+
         $response = $this->permissions->authorize($this->user_token, $this->config['service_id']);
+
+
         $body = json_decode($response->getBody());
 
         //if the auth token is expired, refresh it and try perms again
@@ -180,14 +211,11 @@ abstract class Service
      */
     public function refreshUserToken()
     {
-        $this->user_token = $this->authentication->getToken();
-
-        //if in the range of allowed attempts, retry - otherwise throw error
-        if ($this->auth_attempts < 1) {
-            $this->auth_attempts++;
-        } else {
+        if ($this->auth_attempts > 0)
             throw new InvalidTokenException('The User token could not be refreshed.');
-        }
+
+        $this->user_token = $this->authentication->getToken();
+        $this->auth_attempts++;
     }
 
     /**
@@ -195,14 +223,11 @@ abstract class Service
      */
     public function refreshPermsToken()
     {
-        $this->perms_token = $this->permissions->authorize($this->user_token, $this->config['service_id']);
-
-        //if in the range of allowed attempts, retry - otherwise throw error
-        if ($this->perms_attempts < 1) {
-            $this->perms_attempts++;
-        } else {
+        if ($this->perms_attempts > 0)
             throw new InvalidTokenException('The Perms token could not be refreshed.');
-        }
+
+        $this->perms_token = $this->permissions->authorize($this->user_token, $this->config['service_id']);
+        $this->perms_attempts++;
     }
 
     /**
@@ -210,16 +235,12 @@ abstract class Service
      */
     public function refreshConsumerToken()
     {
-        $this->consumer_token = $this->permissions->authorize($this->user_token, $this->config['service_id']);
-
-        //if in the range of allowed attempts, retry - otherwise throw error
-        if ($this->perms_attempts < 1) {
-            $this->perms_attempts++;
-        } else {
+        if ($this->perms_attempts > 0)
             throw new InvalidTokenException('The Consumer token could not be refreshed.');
-        }
 
+        $this->createConsumerToken();
         $this->storeConsumerToken();
+        $this->consumer_attempts++;
     }
 
     /**
@@ -245,6 +266,10 @@ abstract class Service
      */
     public function retrieveConsumerToken()
     {
+        //if the token_store is null, return
+        if(is_null($this->issuer->token_store))
+            return;
+
         $key = $this->issuer->name .':'. $this->config['service_id'];
 
         if($this->user_token)
@@ -279,16 +304,13 @@ abstract class Service
      * @param string $url
      * @param array  $data
      * @return mixed|\Psr\Http\Message\ResponseInterface
-     * @throws InvalidTokenException
+     * @throws InvalidPermissionsException
      */
     protected function call(string $method, string $url, array $data = null)
     {
         $url = $this->config['endpoint'] . $url;
 
         $this->getConsumerToken();
-
-        //TODO: test the tokens refresh and what gets stored in cache!!!
-        //TODO: also how the ClientException is handled in the other methods for guzzle
 
         //guzzle config
         $data['headers']['Authorization'] = 'Bearer ' . $this->consumer_token;
@@ -302,12 +324,16 @@ abstract class Service
 
         } catch (ClientException $e) {
 
-            //if the service returns 401, we handle the tokens refresh
+            //if the service returns 401, we check the error code
             if ($e->getResponse()->getStatusCode() == 401) {
                 $code = json_decode($e->getResponse()->getBody())->code;
-                $this->handleTokensRefresh($code, $method, $url, $data);
+
+                if (in_array($code, [1002, 1003, 1004])) {
+                    $this->handleTokensRefresh($code, $method, $url, $data);
+                } else {
+                    throw new InvalidPermissionsException('Unauthorized Access.');
+                }
             }
-            return;
         }
     }
 
