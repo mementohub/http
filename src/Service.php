@@ -118,31 +118,11 @@ abstract class Service
      */
     protected function getPermissions()
     {
-        dd('asd');
-
         try {
-
-            $response = $this->caller->request($method, $url, $data);
-
+            $response = $this->permissions->authorize($this->user_token, $this->config['service_id']);
         } catch (ClientException $e) {
-
             $response = $e->getResponse();
-
-            //if the service returns 401, we handle the tokens refresh
-            if ($e->getResponse()->getStatusCode() == 401) {
-                $code = json_decode($e->getResponse()->getBody())->code;
-                $this->handleTokensRefresh($code, $method, $url, $data);
-            }
-            return;
         }
-
-
-        $body = json_decode($response->getBody(), true);
-        return $body;
-
-
-        $response = $this->permissions->authorize($this->user_token, $this->config['service_id']);
-
 
         $body = json_decode($response->getBody());
 
@@ -308,9 +288,12 @@ abstract class Service
      */
     protected function call(string $method, string $url, array $data = null)
     {
-        $url = $this->config['endpoint'] . $url;
-
+        //creates $this->consumer_token
         $this->getConsumerToken();
+
+        //dd($this->consumer_token);
+
+        $url = $this->config['endpoint'] . $url;
 
         //guzzle config
         $data['headers']['Authorization'] = 'Bearer ' . $this->consumer_token;
@@ -324,15 +307,19 @@ abstract class Service
 
         } catch (ClientException $e) {
 
-            //if the service returns 401, we check the error code
-            if ($e->getResponse()->getStatusCode() == 401) {
-                $code = json_decode($e->getResponse()->getBody())->code;
+            $status = $e->getResponse()->getStatusCode();
 
+            //if the service returns 401, we check the error code
+            if ($status == 401) {
+                $code = json_decode($e->getResponse()->getBody())->code;
                 if (in_array($code, [1002, 1003, 1004])) {
                     $this->handleTokensRefresh($code, $method, $url, $data);
                 } else {
-                    throw new InvalidPermissionsException('Unauthorized Access.');
+                    throw new InvalidPermissionsException('Unauthorized.');
                 }
+            //if 403 Forbidden
+            } elseif ($status == 403) {
+                throw new InvalidPermissionsException('Forbidden.');
             }
         }
     }
