@@ -79,6 +79,14 @@ abstract class Service
      */
     protected $consumer_attempts = 0;
 
+    /*
+     * @string
+     *
+     * This is the config key from .env file
+     * This is defined on the project which is using the sdk
+     */
+    protected $url_key;
+
     /**
      * Service constructor.
      *
@@ -391,4 +399,11 @@ abstract class Service
         return $this->call('DELETE', $url, $data);
     }
 
+    /**
+     * @return string
+     */
+    protected function getUrlPath(): string
+    {
+        return env($this->url_key);
+    }
 }
