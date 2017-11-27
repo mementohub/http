@@ -301,11 +301,11 @@ abstract class Service
 
         //dd($this->consumer_token);
 
-        $url = $this->config['endpoint'] . $url;
+        $url = $this->getUrlPath() . $this->config['endpoint'] . $url;
 
         //guzzle config
         $data['headers']['Authorization'] = 'Bearer ' . $this->consumer_token;
-        $data['headers']['Host'] = $this->config['host'];
+        $data['headers']['Host'] = $this->getUrlPath() . $this->config['host'];
 
         try {
 
