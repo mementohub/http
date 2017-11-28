@@ -305,7 +305,7 @@ abstract class Service
 
         //guzzle config
         $data['headers']['Authorization'] = 'Bearer ' . $this->consumer_token;
-        $data['headers']['Host'] = $this->getUrlPath() . $this->config['host'];
+        $data['Host'] = 'http://' . $this->getUrlPath();
 
         try {
 
