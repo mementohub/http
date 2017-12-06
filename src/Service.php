@@ -305,7 +305,7 @@ abstract class Service
 
         //guzzle config
         $data['headers']['Authorization'] = 'Bearer ' . $this->consumer_token;
-        $data['Host'] = 'http://' . $this->getUrlPath();
+        $data['Host'] = $this->getUrlPath();
 
         try {
 
@@ -404,6 +404,6 @@ abstract class Service
      */
     protected function getUrlPath(): string
     {
-        return env($this->url_key);
+        return imemento_url(env($this->url_key));
     }
 }
