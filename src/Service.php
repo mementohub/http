@@ -223,7 +223,7 @@ abstract class Service
      */
     public function refreshConsumerToken()
     {
-        if ($this->perms_attempts > 0)
+        if ($this->consumer_attempts > 0)
             throw new InvalidTokenException('The Consumer token could not be refreshed.');
 
         $this->createConsumerToken();
