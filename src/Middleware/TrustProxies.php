@@ -35,6 +35,8 @@ class TrustProxies extends Middleware
      */
     public function handle($request, Closure $next)
     {
+
+        // this should be changed in the future to something else!
         $this->proxies = [];
         array_push($this->proxies, $request->server('REMOTE_ADDR'));
 
