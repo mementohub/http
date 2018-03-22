@@ -15,8 +15,8 @@
         "guzzlehttp/guzzle": "^6.0",
         "imemento/exceptions": "~5.5.0",
         "imemento/jwt": "~5.5.0",
-        "imemento/sdk-authentication": "dev-master",
-        "imemento/sdk-permissions": "dev-master",
+        "imemento/sdk-authentication": "~5.5.0",
+        "imemento/sdk-permissions": "~5.5.0",
         "imemento/support": "~5.5.0"
     },
     "require-dev": {
