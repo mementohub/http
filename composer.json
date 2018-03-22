@@ -13,11 +13,9 @@
     "require": {
         "php": "^7.1",
         "guzzlehttp/guzzle": "^6.0",
-        "imemento/exceptions": "dev-master",
-        "imemento/jwt": "dev-master",
-        "imemento/sdk-authentication": "dev-master",
-        "imemento/sdk-permissions": "dev-master",
-        "imemento/support": "dev-master"
+        "imemento/exceptions": "~5.5.0",
+        "imemento/jwt": "~5.5.0",
+        "imemento/support": "~5.5.0"
     },
     "require-dev": {
         "phpunit/phpunit" : "^5.7.5"
