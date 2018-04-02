@@ -27,7 +27,7 @@ class TrustProxies extends Middleware
      * @param Closure $next
      * @return mixed
      */
-    public function handle($request, Closure $next)
+    public function handle(Request $request, Closure $next)
     {
 
         // this should be changed in the future to something else!
