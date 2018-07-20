@@ -73,7 +73,7 @@ abstract class Service
             return $whole ? $response : json_decode($response->getBody()->getContents(), true);
         } catch (ClientException $e) {
 
-            $status = $e->getResponse()->getStatusCode();
+            return $e->getResponse()->getStatusCode();
 
             //todo manage error responses here
 
