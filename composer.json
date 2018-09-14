@@ -13,7 +13,6 @@
     "require": {
         "php": "^7.1",
         "guzzlehttp/guzzle": "^6.3",
-        "imemento/exceptions": "dev-master",
         "imemento/jwt": "dev-master"
     },
     "require-dev": {
