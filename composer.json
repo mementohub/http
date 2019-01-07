@@ -1,7 +1,7 @@
 {
     "name": "imemento/http",
     "description": "iMemento HTTP Helpers",
-    "homepage": "https://gitlab.com/imemento/composer/packages/http",
+    "homepage": "https://github.com/mementohub/http",
     "license": "MIT",
     "authors": [
         {
@@ -34,10 +34,6 @@
     "config": {
         "sort-packages": true
     },
-    "repositories": [
-        {"type": "composer", "url": "https://repo.packagist.com/imemento/"},
-        {"packagist.org": false}
-    ],
     "minimum-stability": "dev",
     "prefer-stable": true
 }
