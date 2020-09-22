@@ -12,8 +12,8 @@
     ],
     "require": {
         "php": "^7.1",
-        "guzzlehttp/guzzle": "^6.3",
-        "imemento/jwt": "^5.7"
+        "guzzlehttp/guzzle": "*",
+        "imemento/jwt": "dev-master"
     },
     "require-dev": {
         "phpunit/phpunit" : "^7.0"
