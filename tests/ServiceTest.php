@@ -1,13 +1,14 @@
 <?php
 
-namespace iMemento\Http;
+namespace iMemento\Http\Tests;
 
-use PHPUnit\Framework\TestCase;
 use GuzzleHttp\Client;
-use GuzzleHttp\Handler\MockHandler;
+use iMemento\Http\Service;
 use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\TestCase;
+use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Exception\RequestException;
 
 /**
@@ -19,7 +20,7 @@ class ServiceTest extends TestCase
     public static $handler;
     public static $client;
 
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         self::$mock = new MockHandler([
             new Response(200, ['X-Foo' => 'Bar']),

@@ -12,11 +12,13 @@
     ],
     "require": {
         "php": "^7.1",
-        "guzzlehttp/guzzle": "*",
-        "imemento/jwt": "dev-master"
+        "fideloper/proxy": "^4.2",
+        "guzzlehttp/guzzle": "^6.3 || ^7.0",
+        "illuminate/http": "^5.0 || ^6.0 || ^7.0",
+        "imemento/jwt": "^0.1.0"
     },
     "require-dev": {
-        "phpunit/phpunit" : "^7.0"
+        "phpunit/phpunit" : "^7.0 || ^8.0 || ^9.0"
     },
     "autoload": {
         "psr-4": {
@@ -25,7 +27,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "iMemento\\Http\\Test\\": "tests"
+            "iMemento\\Http\\Tests\\": "tests"
         }
     },
     "scripts": {
@@ -34,10 +36,6 @@
     "config": {
         "sort-packages": true
     },
-    "repositories": [
-        {"type": "composer", "url": "https://repo.packagist.com/imemento/"},
-        {"packagist.org": false}
-    ],
     "minimum-stability": "dev",
     "prefer-stable": true
 }
