@@ -11,14 +11,14 @@
         }
     ],
     "require": {
-        "php": "^7.1",
+        "php": "^7.2",
         "fideloper/proxy": "^4.2",
         "guzzlehttp/guzzle": "^6.3 || ^7.0",
-        "illuminate/http": "^5.8",
-        "imemento/jwt": "~5.8.0"
+        "illuminate/http": "^6.0",
+        "imemento/jwt": "~6.0.0"
     },
     "require-dev": {
-        "phpunit/phpunit" : "^7.0"
+        "phpunit/phpunit" : "^8.0"
     },
     "autoload": {
         "psr-4": {
