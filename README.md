@@ -1,8 +1,8 @@
 # iMemento HTTP Service
-[![Build Status](https://travis-ci.org/mementohub/http.svg?branch=master)](https://travis-ci.org/mementohub/http)
-[![Latest Stable Version](https://poser.pugx.org/imemento/http/v/stable)](https://packagist.org/packages/imemento/http)
-[![License](https://poser.pugx.org/imemento/http/license)](https://packagist.org/packages/imemento/http)
-[![Total Downloads](https://poser.pugx.org/imemento/http/downloads)](https://packagist.org/packages/imemento/http)
+[![Build Status](https://github.com/mementohub/http/workflows/Testing/badge.svg)](https://github.com/mementohub/http/actions)
+[![Latest Stable Version](https://img.shields.io/packagist/v/imemento/http)](https://packagist.org/packages/imemento/http)
+[![License](https://img.shields.io/packagist/l/imemento/http)](https://packagist.org/packages/imemento/http)
+[![Total Downloads](https://img.shields.io/packagist/dt/imemento/http)](https://packagist.org/packages/imemento/http)
 
 Abstracts the communication between API and clients. 
 It is framework independent.
